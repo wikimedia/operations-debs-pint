@@ -1,0 +1,19 @@
+Source: pint
+Section: devel
+Priority: optional
+Maintainer: Filippo Giunchedi <fgiunchedi@wikimedia.org>
+Build-Depends: debhelper (>= 10),
+               debhelper-compat (= 12),
+               git,
+               psmisc,
+               golang-go (>= 1.16),
+               ca-certificates,
+Standards-Version: 4.5.1
+Homepage: https://github.com/cloudflare/pint
+
+Package: pint
+Architecture: any
+Built-Using: ${misc:Built-Using}
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
+Description: Prometheus rule linter/validator

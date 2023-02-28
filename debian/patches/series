@@ -1,0 +1,2 @@
+debian_version_makefile.patch
+enable_dynamic_linking.patch

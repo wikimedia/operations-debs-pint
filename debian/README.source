@@ -1,0 +1,29 @@
+Pint Debian package
+====================
+
+This repository contains the Debian packaging for pint.
+
+Upstream code is (re)tagged as upstream/<version> from upstream v<version> tags
+and Debian commits are made to the "master" branch.
+
+New upstream version
+====================
+
+  git remote add upstream https://github.com/cloudflare/pint
+  git fetch upstream
+  git checkout v<version>
+  git tag upstream/<version>
+
+  git checkout master
+  git merge upstream/<version>
+  dch -v<version>-1
+
+The resulting repository should be buildable via usual means, for example from
+build2001.codfw.wmnet:
+
+  https_proxy=http://webproxy.codfw.wmnet:8080 DIST=bullseye BACKPORTS=yes pdebuild
+
+Once happy you can push/review to origin both the branch and the upstream tags.
+
+  git push origin
+  git push origin upstream/<version>

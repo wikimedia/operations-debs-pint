@@ -1,0 +1,14 @@
+Description: Enable cgo to enable dynamic-linked executable
+---
+
+--- pint-0.40.1.orig/Makefile
++++ pint-0.40.1/Makefile
+@@ -18,7 +18,7 @@ COVER_PROFILE = $(COVER_DIR)/coverage.ou
+ build: $(PINT_BIN)
+ 
+ $(PINT_BIN): $(PINT_SRC) go.mod go.sum
+-	CGO_ENABLED=0 go build -trimpath -ldflags='-X main.version=$(PINT_VERSION) -X main.commit=$(PINT_COMMIT) -s -w' ./cmd/pint
++	go build -trimpath -ldflags='-X main.version=$(PINT_VERSION) -X main.commit=$(PINT_COMMIT) -s -w' ./cmd/pint
+ 
+ $(GOBIN)/golangci-lint: tools/golangci-lint/go.mod tools/golangci-lint/go.sum
+ 	go install -modfile=tools/golangci-lint/go.mod github.com/golangci/golangci-lint/cmd/golangci-lint

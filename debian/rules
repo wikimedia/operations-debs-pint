@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE=1
+export HOME=/tmp/pint
+export GOPATH=/tmp/pint/go
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -D -m 755 -o root -g root pint debian/pint/usr/bin/pint
+	install -D -m 644 -o root -g root debian/pint.sysusers debian/pint/usr/lib/sysusers.d/pint.conf
+
+override_dh_auto_test:

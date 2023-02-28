@@ -1,0 +1,20 @@
+Description: Set version based on Debian
+Author: Filippo Giunchedi <filippo@debian.org>
+
+---
+
+--- pint-0.40.1.orig/Makefile
++++ pint-0.40.1/Makefile
+@@ -1,8 +1,10 @@
+ PINT_BIN     := pint
+ PINT_GO_DIRS := cmd internal
+ PINT_SRC     := $(shell find $(PINT_GO_DIRS) -type f -name '*.go')
+-PINT_VERSION ?= $(shell git describe --tags --always --dirty='-dev')
+-PINT_COMMIT  ?= $(shell git rev-parse HEAD)
++
++include /usr/share/dpkg/pkg-info.mk
++PINT_VERSION ?= $(DEB_VERSION)
++PINT_COMMIT  ?= $(SOURCE_DATE_EPOCH)
+ 
+ GOBIN := $(shell go env GOBIN)
+ ifeq ($(GOBIN),)
