@@ -1,0 +1,49 @@
+http response mock /200 200 OK
+http response mock /404 404 Not found
+http response mock /500 500 Error
+http redirect mock /redirect/200 /200
+http redirect mock /redirect/404 /404
+http start mock 127.0.0.1:7088
+
+pint.ok --no-color lint --min-severity=info rules
+! stdout .
+cmp stderr stderr.txt
+
+-- stderr.txt --
+level=info msg="Loading configuration file" path=.pint.hcl
+rules/1.yml:10: GET request for http://127.0.0.1:7088/404 returned invalid status code: 404 Not Found (rule/link)
+ 10 |       r404: http://127.0.0.1:7088/404
+
+rules/1.yml:11: GET request for http://127.0.0.1:7088/500 returned invalid status code: 500 Internal Server Error (rule/link)
+ 11 |       r500: http://127.0.0.1:7088/500
+
+rules/1.yml:13: GET request for http://127.0.0.1:7088/redirect/404 returned invalid status code: 404 Not Found (rule/link)
+ 13 |       rewrite: https://xxxx.example.com/redirect/404
+
+level=info msg="Problems found" Information=2 Warning=1
+-- rules/1.yml --
+groups:
+- name: foo
+  rules:
+  - alert: down
+    expr: up == 0
+    labels:
+      foo: bar
+    annotations:
+      r200: http://127.0.0.1:7088/200
+      r404: http://127.0.0.1:7088/404
+      r500: http://127.0.0.1:7088/500
+      r302t200: http://127.0.0.1:7088/redirect/200
+      rewrite: https://xxxx.example.com/redirect/404
+
+-- .pint.hcl --
+rule {
+  link "http://.*" {
+    severity = "info"
+  }
+  link "https://xxxx.example.com/(.+)" {
+    uri = "http://127.0.0.1:7088/$1"
+    severity = "warning"
+	timeout  = "10s"
+  }
+}

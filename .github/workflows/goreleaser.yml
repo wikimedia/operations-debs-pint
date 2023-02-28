@@ -1,0 +1,21 @@
+name: Check goreleaser config
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  goreleaser-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Check config
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          args: check -f .goreleaser.yml

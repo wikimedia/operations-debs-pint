@@ -1,0 +1,24 @@
+pint.error --no-color lint rules
+! stdout .
+cmp stderr stderr.txt
+
+-- stderr.txt --
+level=info msg="Loading configuration file" path=.pint.hcl
+rules/strict.yml:2: cannot unmarshal !!seq into rulefmt.RuleGroups (yaml/parse)
+ 2 | - alert: No Owner
+
+level=info msg="Problems found" Fatal=1
+level=fatal msg="Fatal error" error="problems found"
+-- rules/strict.yml --
+{%- raw %} # pint ignore/line
+- alert: No Owner
+  expr: up > 0
+
+-- rules/relaxed.yml --
+{%- raw %} # pint ignore/line
+- alert: Owner Set
+  expr: up{job="foo"} == 0
+-- .pint.hcl --
+parser {
+  relaxed = ["rules/relaxed.*"]
+}

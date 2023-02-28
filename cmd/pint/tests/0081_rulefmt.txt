@@ -1,0 +1,15 @@
+pint.error --no-color lint rules
+! stdout .
+cmp stderr stderr.txt
+
+-- stderr.txt --
+rules/strict.yml:4: missing expr key (yaml/parse)
+ 4 |   - record: foo
+
+level=info msg="Problems found" Fatal=1
+level=fatal msg="Fatal error" error="problems found"
+-- rules/strict.yml --
+groups:
+- name: foo
+  rules:
+  - record: foo

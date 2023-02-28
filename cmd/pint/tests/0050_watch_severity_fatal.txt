@@ -1,0 +1,36 @@
+exec bash -x ./test.sh &
+
+pint.ok watch --listen=127.0.0.1:6050 --min-severity=fatal --pidfile=pint.pid rules
+cmp curl.txt metrics.txt
+
+-- test.sh --
+sleep 5
+curl -s http://127.0.0.1:6050/metrics | grep -E '^pint_problem' > curl.txt
+cat pint.pid | xargs kill
+
+-- rules/1.yml --
+- record: broken
+  expr: foo / count())
+
+- record: aggregate
+  expr: sum(foo) without(job)
+
+- alert: comparison
+  expr: foo
+
+-- .pint.hcl --
+parser {
+  relaxed = [".*"]
+}
+rule {
+    match {
+      kind = "recording"
+    }
+    aggregate ".+" {
+        keep = [ "job" ]
+    }
+}
+
+-- metrics.txt --
+pint_problem{filename="rules/1.yml",kind="recording",name="broken",owner="",problem="syntax error: no arguments for aggregate expression provided",reporter="promql/syntax",severity="fatal"} 1
+pint_problems 1

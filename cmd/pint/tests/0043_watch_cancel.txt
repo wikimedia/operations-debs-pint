@@ -1,0 +1,28 @@
+http slow-response github / 30s 200 {}
+http start github 127.0.0.1:7043
+
+exec bash -x ./test.sh &
+
+pint.ok --no-color watch --interval=1h --listen=127.0.0.1:6043 --pidfile=pint.pid rules
+! stdout .
+stderr 'level=info msg="Shutting down"'
+stderr 'level=info msg="Waiting for all background tasks to finish"'
+stderr 'level=info msg="Background worker finished"'
+
+-- test.sh --
+sleep 3
+cat pint.pid | xargs kill
+
+-- rules/1.yml --
+- record: aggregate
+  expr: sum(foo) without(job)
+
+-- .pint.hcl --
+parser {
+  relaxed = [".*"]
+}
+prometheus "slow" {
+  uri     = "http://127.0.0.1:7043"
+  timeout = "2m"
+  required = true
+}

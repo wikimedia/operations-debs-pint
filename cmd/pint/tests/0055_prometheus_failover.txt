@@ -1,0 +1,26 @@
+http response prometheus /api/v1/status/config 200 {"status":"success","data":{"yaml":"global:\n  scrape_interval: 30s\n"}}
+http response prometheus /api/v1/query_range 200 {"status":"success","data":{"resultType":"matrix","result":[]}}
+http response prometheus /api/v1/query 200 {"status":"success","data":{"resultType":"vector","result":[]}}
+http start prometheus 127.0.0.1:7055
+
+pint.error --no-color lint rules
+! stdout .
+stderr 'level=error msg="Query returned an error" error="Post \\"http://127.0.0.1:1055/api/v1/query\\": dial tcp 127.0.0.1:1055: connect: connection refused" query=count\(foo\) uri=http://127.0.0.1:1055'
+stderr 'level=error msg="Query returned an error" error="failed to query Prometheus config: Get \\"http://127.0.0.1:1055/api/v1/status/config\\": dial tcp 127.0.0.1:1055: connect: connection refused" query=/api/v1/status/config uri=http://127.0.0.1:1055'
+! stderr 'query="count\(foo offset '
+stderr 'rules/1.yml:2: prometheus "prom" at http://127.0.0.1:7055 didn''t have any series for "foo" metric in the last 1w \(promql/series\)'
+
+-- rules/1.yml --
+- record: aggregate
+  expr: sum(foo) without(job)
+
+-- .pint.hcl --
+prometheus "prom" {
+  uri      = "http://127.0.0.1:1055"
+  failover = ["http://127.0.0.1:7055"]
+  timeout  = "5s"
+  required = true
+}
+parser {
+  relaxed = [".*"]
+}

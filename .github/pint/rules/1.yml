@@ -1,0 +1,9 @@
+groups:
+- name: test
+  rules:
+  - alert: Service Is Down
+    expr: up == 0
+    for: 0s
+
+  - alert: Service Is Down
+    expr: up{job="abc"} == 0

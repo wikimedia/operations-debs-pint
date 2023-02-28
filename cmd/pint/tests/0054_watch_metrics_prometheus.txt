@@ -1,0 +1,158 @@
+http slow-response prometheus /api/v1/status/config 100ms 500 Fatal Error
+http slow-response prometheus /api/v1/query 400ms 200 {"status":"error","errorType":"bad_data","error":"bogus query"}
+http start prometheus 127.0.0.1:7054
+
+exec bash -x ./test.sh &
+
+pint.ok watch --listen=127.0.0.1:6054 --pidfile=pint.pid rules
+cmp curl.txt metrics.txt
+
+-- test.sh --
+sleep 3
+curl -s http://127.0.0.1:6054/metrics | grep 'pint_' | perl -pe "s/^([a-zA-Z].+)[ ]([0-9\.\-\+eE]+)$/\1/g" > curl.txt
+cat pint.pid | xargs kill
+
+-- rules/1.yml --
+- record: broken
+  expr: foo / count())
+
+- record: aggregate
+  expr: sum(foo) without(job)
+
+-- rules/2.yml --
+# pint rule/owner bob and alice
+- alert: comparison
+  expr: foo
+
+-- .pint.hcl --
+prometheus "prom1" {
+  uri     = "http://127.0.0.1:7054"
+  timeout = "5s"
+  required = true
+}
+prometheus "prom2" {
+  uri     = "http://127.0.0.1:1054"
+  timeout = "5s"
+  required = true
+}
+parser {
+  relaxed = [".*"]
+}
+
+-- metrics.txt --
+# HELP pint_check_duration_seconds How long did a check took to complete
+# TYPE pint_check_duration_seconds summary
+pint_check_duration_seconds_sum{check="alerts/comparison"}
+pint_check_duration_seconds_count{check="alerts/comparison"}
+pint_check_duration_seconds_sum{check="alerts/for"}
+pint_check_duration_seconds_count{check="alerts/for"}
+pint_check_duration_seconds_sum{check="alerts/template"}
+pint_check_duration_seconds_count{check="alerts/template"}
+pint_check_duration_seconds_sum{check="labels/conflict"}
+pint_check_duration_seconds_count{check="labels/conflict"}
+pint_check_duration_seconds_sum{check="promql/fragile"}
+pint_check_duration_seconds_count{check="promql/fragile"}
+pint_check_duration_seconds_sum{check="promql/range_query"}
+pint_check_duration_seconds_count{check="promql/range_query"}
+pint_check_duration_seconds_sum{check="promql/rate"}
+pint_check_duration_seconds_count{check="promql/rate"}
+pint_check_duration_seconds_sum{check="promql/regexp"}
+pint_check_duration_seconds_count{check="promql/regexp"}
+pint_check_duration_seconds_sum{check="promql/series"}
+pint_check_duration_seconds_count{check="promql/series"}
+pint_check_duration_seconds_sum{check="promql/syntax"}
+pint_check_duration_seconds_count{check="promql/syntax"}
+pint_check_duration_seconds_sum{check="promql/vector_matching"}
+pint_check_duration_seconds_count{check="promql/vector_matching"}
+pint_check_duration_seconds_sum{check="rule/duplicate"}
+pint_check_duration_seconds_count{check="rule/duplicate"}
+# HELP pint_check_iterations_total Total number of completed check iterations since pint start
+# TYPE pint_check_iterations_total counter
+pint_check_iterations_total
+# HELP pint_last_run_checks The number of checks to run in the current iteration
+# TYPE pint_last_run_checks gauge
+pint_last_run_checks
+# HELP pint_last_run_checks_done The number of checks completed in the current iteration
+# TYPE pint_last_run_checks_done gauge
+pint_last_run_checks_done
+# HELP pint_last_run_duration_seconds Last checks run duration in seconds
+# TYPE pint_last_run_duration_seconds gauge
+pint_last_run_duration_seconds
+# HELP pint_last_run_time_seconds Last checks run completion time since unix epoch in seconds
+# TYPE pint_last_run_time_seconds gauge
+pint_last_run_time_seconds
+# HELP pint_problem Prometheus rule problem reported by pint
+# TYPE pint_problem gauge
+pint_problem{filename="rules/1.yml",kind="recording",name="aggregate",owner="",problem="couldn't run \"promql/range_query\" checks due to prometheus \"prom2\" at http://127.0.0.1:1054 connection error: connection refused",reporter="promql/range_query",severity="bug"}
+pint_problem{filename="rules/1.yml",kind="recording",name="aggregate",owner="",problem="couldn't run \"promql/rate\" checks due to prometheus \"prom1\" at http://127.0.0.1:7054 connection error: server_error: server error: 500",reporter="promql/rate",severity="bug"}
+pint_problem{filename="rules/1.yml",kind="recording",name="aggregate",owner="",problem="couldn't run \"promql/rate\" checks due to prometheus \"prom2\" at http://127.0.0.1:1054 connection error: connection refused",reporter="promql/rate",severity="bug"}
+pint_problem{filename="rules/1.yml",kind="recording",name="aggregate",owner="",problem="couldn't run \"promql/series\" checks due to prometheus \"prom2\" at http://127.0.0.1:1054 connection error: connection refused",reporter="promql/series",severity="bug"}
+pint_problem{filename="rules/1.yml",kind="recording",name="aggregate",owner="",problem="prometheus \"prom1\" at http://127.0.0.1:7054 failed with: bad_data: bogus query",reporter="promql/series",severity="bug"}
+pint_problem{filename="rules/1.yml",kind="recording",name="broken",owner="",problem="syntax error: no arguments for aggregate expression provided",reporter="promql/syntax",severity="fatal"}
+pint_problem{filename="rules/2.yml",kind="alerting",name="comparison",owner="bob and alice",problem="couldn't run \"promql/range_query\" checks due to prometheus \"prom2\" at http://127.0.0.1:1054 connection error: connection refused",reporter="promql/range_query",severity="bug"}
+pint_problem{filename="rules/2.yml",kind="alerting",name="comparison",owner="bob and alice",problem="couldn't run \"promql/rate\" checks due to prometheus \"prom1\" at http://127.0.0.1:7054 connection error: server_error: server error: 500",reporter="promql/rate",severity="bug"}
+pint_problem{filename="rules/2.yml",kind="alerting",name="comparison",owner="bob and alice",problem="couldn't run \"promql/rate\" checks due to prometheus \"prom2\" at http://127.0.0.1:1054 connection error: connection refused",reporter="promql/rate",severity="bug"}
+pint_problem{filename="rules/2.yml",kind="alerting",name="comparison",owner="bob and alice",problem="couldn't run \"promql/series\" checks due to prometheus \"prom2\" at http://127.0.0.1:1054 connection error: connection refused",reporter="promql/series",severity="bug"}
+pint_problem{filename="rules/2.yml",kind="alerting",name="comparison",owner="bob and alice",problem="prometheus \"prom1\" at http://127.0.0.1:7054 failed with: bad_data: bogus query",reporter="promql/series",severity="bug"}
+# HELP pint_problems Total number of problems reported by pint
+# TYPE pint_problems gauge
+pint_problems
+# HELP pint_prometheus_cache_evictions_total Total number of times an entry was evicted from query cache due to size limit or TTL
+# TYPE pint_prometheus_cache_evictions_total counter
+pint_prometheus_cache_evictions_total{name="prom1"}
+pint_prometheus_cache_evictions_total{name="prom2"}
+# HELP pint_prometheus_cache_hits_total Total number of query cache hits
+# TYPE pint_prometheus_cache_hits_total counter
+pint_prometheus_cache_hits_total{endpoint="/api/v1/query",name="prom1"}
+pint_prometheus_cache_hits_total{endpoint="/api/v1/query",name="prom2"}
+pint_prometheus_cache_hits_total{endpoint="/api/v1/status/config",name="prom1"}
+pint_prometheus_cache_hits_total{endpoint="/api/v1/status/config",name="prom2"}
+pint_prometheus_cache_hits_total{endpoint="/api/v1/status/flags",name="prom1"}
+pint_prometheus_cache_hits_total{endpoint="/api/v1/status/flags",name="prom2"}
+# HELP pint_prometheus_cache_miss_total Total number of query cache misses
+# TYPE pint_prometheus_cache_miss_total counter
+pint_prometheus_cache_miss_total{endpoint="/api/v1/query",name="prom1"}
+pint_prometheus_cache_miss_total{endpoint="/api/v1/query",name="prom2"}
+pint_prometheus_cache_miss_total{endpoint="/api/v1/status/config",name="prom1"}
+pint_prometheus_cache_miss_total{endpoint="/api/v1/status/config",name="prom2"}
+pint_prometheus_cache_miss_total{endpoint="/api/v1/status/flags",name="prom1"}
+pint_prometheus_cache_miss_total{endpoint="/api/v1/status/flags",name="prom2"}
+# HELP pint_prometheus_cache_size Total number of entries currently stored in Prometheus query cache
+# TYPE pint_prometheus_cache_size gauge
+pint_prometheus_cache_size{name="prom1"}
+pint_prometheus_cache_size{name="prom2"}
+# HELP pint_prometheus_queries_running Total number of in-flight prometheus queries
+# TYPE pint_prometheus_queries_running gauge
+pint_prometheus_queries_running{endpoint="/api/v1/query",name="prom1"}
+pint_prometheus_queries_running{endpoint="/api/v1/query",name="prom2"}
+pint_prometheus_queries_running{endpoint="/api/v1/status/config",name="prom1"}
+pint_prometheus_queries_running{endpoint="/api/v1/status/config",name="prom2"}
+pint_prometheus_queries_running{endpoint="/api/v1/status/flags",name="prom1"}
+pint_prometheus_queries_running{endpoint="/api/v1/status/flags",name="prom2"}
+# HELP pint_prometheus_queries_total Total number of all prometheus queries
+# TYPE pint_prometheus_queries_total counter
+pint_prometheus_queries_total{endpoint="/api/v1/query",name="prom1"}
+pint_prometheus_queries_total{endpoint="/api/v1/query",name="prom2"}
+pint_prometheus_queries_total{endpoint="/api/v1/status/config",name="prom1"}
+pint_prometheus_queries_total{endpoint="/api/v1/status/config",name="prom2"}
+pint_prometheus_queries_total{endpoint="/api/v1/status/flags",name="prom1"}
+pint_prometheus_queries_total{endpoint="/api/v1/status/flags",name="prom2"}
+# HELP pint_prometheus_query_errors_total Total number of failed prometheus queries
+# TYPE pint_prometheus_query_errors_total counter
+pint_prometheus_query_errors_total{endpoint="/api/v1/query",name="prom1",reason="api/bad_data"}
+pint_prometheus_query_errors_total{endpoint="/api/v1/query",name="prom2",reason="connection/error"}
+pint_prometheus_query_errors_total{endpoint="/api/v1/status/config",name="prom1",reason="api/server_error"}
+pint_prometheus_query_errors_total{endpoint="/api/v1/status/config",name="prom2",reason="connection/error"}
+pint_prometheus_query_errors_total{endpoint="/api/v1/status/flags",name="prom1",reason="api/client_error"}
+pint_prometheus_query_errors_total{endpoint="/api/v1/status/flags",name="prom2",reason="connection/error"}
+# HELP pint_rule_file_owner This is a boolean metric that describes who is the configured owner for given rule file
+# TYPE pint_rule_file_owner gauge
+pint_rule_file_owner{filename="rules/2.yml",owner="bob and alice"}
+# HELP pint_rules_parsed_total Total number of rules parsed since startup
+# TYPE pint_rules_parsed_total counter
+pint_rules_parsed_total{kind="alerting"}
+pint_rules_parsed_total{kind="invalid"}
+pint_rules_parsed_total{kind="recording"}
+# HELP pint_version Version information
+# TYPE pint_version gauge
+pint_version{version="unknown"}

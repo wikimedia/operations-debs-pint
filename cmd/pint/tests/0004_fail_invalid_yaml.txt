@@ -1,0 +1,34 @@
+pint.error --no-color lint rules
+! stdout .
+cmp stderr stderr.txt
+
+-- stderr.txt --
+level=info msg="Loading configuration file" path=.pint.hcl
+level=error msg="Failed to parse file content" error="yaml: line 4: did not find expected key" lines=1-7 path=rules/bad.yaml
+rules/bad.yaml:4: did not find expected key (yaml/parse)
+ 4 | 
+
+rules/ok.yml:5: syntax error: unclosed left bracket (promql/syntax)
+ 5 |     expr: sum(foo[5m)
+
+level=info msg="Problems found" Fatal=2
+level=fatal msg="Fatal error" error="problems found"
+-- rules/ok.yml --
+groups:
+- name: foo
+  rules:
+  - record: sum:missing
+    expr: sum(foo[5m)
+
+-- rules/bad.yaml --
+xxx:
+  xxx:
+  xxx:
+
+- xx
+- yyy
+
+-- .pint.hcl --
+parser {
+  relaxed = [".*"]
+}
